@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  mydb: 
+    # build:
+      # context: ./path to Dockerfile
+    image: stackupiss/northwind-db:v1
+    networks:
+    - mynet
+    volumes:
+      - data-vol:/var/lib/mysql
+
+  myapp:
+    image: stackupiss/northwind-app:v1
+    environment: 
+      - DB_HOST=mydb
+      - DB_USER=root
+      - DB_PASSWORD=changeit
+    networks:
+      - mynet
+
+networks:
+  mynet: # default mode is bridge
+
+volumes:
+  data-vol:
