@@ -30,7 +30,7 @@ export default {
   <QuoteComponent :quote="quote" />
   <div class="card">
     <p>
-      Repository <a href="#">github</a>
+      Repository <a href="https://github.com/theorange7/precourseassignment">https://github.com/theorange7/precourseassignment</a>
     </p>
   </div>
 </template>
