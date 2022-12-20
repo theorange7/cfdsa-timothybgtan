@@ -41,5 +41,5 @@ spec:
   selector:
     name: bggapp-po
   ports:
-    - port: 3000 # service port
+    - port: 80 # service port
       targetPort: 3000 # pod port = container port
