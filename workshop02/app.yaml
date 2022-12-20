@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggapp-deploy
+  labels:
+    name: bggapp-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: bggapp-po
+  template:
+    metadata:
+      name: bggapp-po
+      labels:
+        name: bggapp-po
+    spec:
+      containers: # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#container-v1-core
+        - name: bggapp-container
+          image: stackupiss/bgg-backend:v1
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: bgg-cm
+            - secretRef:
+                name: bgg-secret
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          livenessProbe: # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#probe-v1-core
+            httpGet:
+              path: /healthz
+              port: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggapp-svc
+spec:
+  type: NodePort
+  selector:
+    name: bggapp-po
+  ports:
+    - port: 3000 # service port
+      targetPort: 3000 # pod port = container port
