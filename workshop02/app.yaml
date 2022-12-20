@@ -37,7 +37,7 @@ kind: Service
 metadata:
   name: bggapp-svc
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     name: bggapp-po
   ports:
