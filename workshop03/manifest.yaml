@@ -1,7 +1,9 @@
+# PVC
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: cs-pvc
+  namespace: my-code-server
   labels:
     app: codeserver
     name: cs-pvc
@@ -12,17 +14,98 @@ spec:
       storage: 1Gi
   storageClassName: do-block-storage-xfs
 ---
+# configMap
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cs-cm
+  namespace: my-code-server
   labels:
     app: codeserver
     name: cs-cm
 data:
-  config: |
-    PUID=1000
-    PGID=1000
-    TZ=Asia/Singapore
-    DEFAULT_WORKSPACE=/config/workspace
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Asia/Singapore
+  DEFAULT_WORKSPACE: /config/workspace
 ---
+# deployment - mount /config/workspace
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cs-deploy
+  labels:
+    app: codeserver
+    name: cs-deploy
+  namespace: my-code-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: cs-po
+  template:
+    metadata:
+      name: cs-po
+      labels:
+        name: cs-po
+        app: codeserver
+    spec:
+      volumes:
+      - name: cs-vol
+        persistentVolumeClaim:
+          claimName: cs-pvc
+      containers:
+        - name: cs-container
+          image: linuxserver/code-server:4.9.1
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: cs-cm
+            - secretRef:
+                name: oauth-secret
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+            - name: cs-vol
+              mountPath: /config/workspace
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cs-svc
+  labels:
+    name: cs-svc
+    app: codeserver
+  namespace: my-code-server
+spec:
+  type: ClusterIP
+  selector:
+    name: cs-po
+  ports:
+  - port: 8443
+    targetPort: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cs-ing
+  labels:
+    name: cs-ing
+  namespace: my-code-server
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri" # $host is a special var specific to Nginx
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cs1-146.190.202.77.nip.io
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: cs-svc
+              port:
+                number: 8443
