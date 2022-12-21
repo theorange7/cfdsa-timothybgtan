@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cs-pvc
+  labels:
+    app: codeserver
+    name: cs-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: do-block-storage-xfs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cs-cm
+  labels:
+    app: codeserver
+    name: cs-cm
+data:
+  config: |
+    PUID=1000
+    PGID=1000
+    TZ=Asia/Singapore
+    DEFAULT_WORKSPACE=/config/workspace
+---
