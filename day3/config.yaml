@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-cm
+data: # defining volume you can "import" files and values
+  hosts: | # keys are file names
+    127.0.0.1 localhost
+    127.0.1.1 batcomputer
+

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dov-bear-deployment
+  labels: 
+    name: dov-bear-deployment
+spec: # defines the number of Pods in a Deployment and template (containers in the Pod)
+  replicas: 3
+  selector:
+    matchLabels:
+      name: dov-bear-po
+  template:
+    metadata:
+      name: dov-bear-po
+      labels:
+        name: dov-bear-po
+    spec:
+      volumes: # volume is available to ALL containers inside this Pod
+      - name: config-vol
+        configMap:
+          name: config-cm
+      - name: tmp-vol
+        emptyDir: {} # lifecycle follows the Pod, scoped to the Pod
+        # temporary directory for sharing files between the containers
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: db-pvc
+      containers:
+      - name: dov-bear-container
+        image: chukmunnlee/dov-bear-golang:0.1@sha256:ec9c01eabd2e2bd78e75b1dfdeb228da1cf9f3ddc9e62d9d091ee8d73c342a34
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: INSTANCE_NAME
+            value: dov-bear
+          - name: INSTANCE_HASH
+            valueFrom: 
+              fieldRef:
+                fieldPath: status.podIP
+          - name: PORT
+            value: "3000"
+        ports:
+          - containerPort: 3000
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+        volumeMounts:
+        - name: config-vol # ref to volumes spec defined above
+          mountPath: /app/config # creates the mountPoint if it doesn't exist
+          readOnly: true # generally people set it to true to prevent configuration updates
+        - name: tmp-vol
+          mountPath: /tmp/a
+        - name: data-vol
+          mountPath: /var/lib/mysql
